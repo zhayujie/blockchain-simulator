@@ -7,7 +7,6 @@
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
 #include "ns3/address.h"
-#include "bitcoin.h"
 #include "ns3/boolean.h"
 
 namespace ns3 {
@@ -16,12 +15,18 @@ class Address;
 class Socket;
 class Packet;
 
- 
+
 class PaxosNode : public Application 
 {
     public:
+        static TypeId GetTypeId (void);
+
         void SetPeersAddresses (const std::vector<Ipv4Address> &peers);         // 设置所有邻节点的地址
-        
+
+        PaxosNode (void);
+
+        virtual ~PaxosNode (void);
+
     protected:
         Ptr<Socket>     m_socket;                           // 监听的socket
         Address         m_local;                            // 本节点地址
@@ -38,13 +43,13 @@ class PaxosNode : public Application
         virtual void StopApplication (void); 
 
         // 处理消息
-        void HandleAccept (Ptr<Socket> socket, const Address& from);
+        void HandleRead (Ptr<Socket> socket, const Address& from);
 
         // 发送消息
-        void SendMessage(enum Message responseMessage, std::string msg, Ptr<Socket> outgoingSocket);
+        //void SendMessage(enum Message responseMessage, std::string msg, Ptr<Socket> outgoingSocket);
 
 };
-
+/*
 enum Message
 {
     REQUEST_TICKET,           // 0
@@ -54,6 +59,6 @@ enum Message
     RESPONSE_PROPOSE,         // 4  
     RESPONSE_COMMIT,          // 5  
 };
-
+*/
 }
 #endif

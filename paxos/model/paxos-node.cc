@@ -14,7 +14,7 @@
 #include "ns3/tcp-socket-factory.h"
 #include "ns3/uinteger.h"
 #include "ns3/double.h"
-#include "bitcoin-node.h"
+#include "paxos-node.h"
 
 namespace ns3 {
 
@@ -22,20 +22,58 @@ NS_LOG_COMPONENT_DEFINE ("PaxosNode");
 
 NS_OBJECT_ENSURE_REGISTERED (PaxosNode);
 
-void 
-PaxosNode::HandleRead (Ptr<Socket> socket)
-{	
+
+TypeId
+PaxosNode::GetTypeId (void)
+{
+    static TypeId tid = TypeId ("ns3::PaxosNode")
+    .SetParent<Application> ()
+    .SetGroupName("Applications")
+    .AddConstructor<PaxosNode> ()
+    ;
+
+    return tid;
+} 
+
+PaxosNode::PaxosNode(void) {
 
 }
 
+PaxosNode::~PaxosNode(void) {
+    NS_LOG_FUNCTION (this);
 
+}
+
+void 
+PaxosNode::StartApplication ()              // Called at time specified by Start
+{
+    t_max = 0;
+    command = "";
+    t_store = 0;
+    ticket = 0;
+    std::cout << "start server ";
+    NS_LOG_INFO("log info");
+    // m_socket->SetRecvCallback (MakeCallback (&PaxosNode::HandleRead, this));
+}
+
+void 
+PaxosNode::StopApplication ()             // Called at time specified by Stop
+{
+    
+}
+
+void 
+PaxosNode::HandleRead (Ptr<Socket> socket, const Address& from)
+{   
+
+}
+
+/*
 void 
 PaxosNode::SendMessage (enum Message responseMessage, std::string msg, Ptr<Socket> outgoingSocket)
-{	
+{   
 
 }
-
-
-
+*/
 
 } // namespace ns3
