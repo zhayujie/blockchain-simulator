@@ -21,8 +21,8 @@ main (int argc, char *argv[])
   nodes.Create (2);
 
   PointToPointHelper pointToPoint;
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
-  pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("8Mbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("5ms"));
 
   // 默认pointToPint只能连接两个节点，需要手动连接
   NetDeviceContainer devices;
@@ -35,16 +35,22 @@ main (int argc, char *argv[])
   address.SetBase ("10.1.1.0", "255.255.255.0");
 
   Ipv4InterfaceContainer interfaces = address.Assign (devices);
+  
 
-  PaxosHelper paxosHelper;
+  PaxosHelper paxosHelper (2);
 
-  ApplicationContainer paxosApp = paxosHelper.Install (nodes);
+  // 给节点设置ip地址，安装应用程序
+  ApplicationContainer paxosApp = paxosHelper.Install (interfaces, nodes);
 
-  paxosApp.Start (Seconds (1.0));
+  paxosApp.Start (Seconds (0.0));
   paxosApp.Stop (Seconds (10.0));
+
+
+
 
 
   Simulator::Run ();
   Simulator::Destroy ();
+
   return 0;
 }
