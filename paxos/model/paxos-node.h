@@ -34,21 +34,22 @@ class PaxosNode : public Application
         std::map<Address, std::string>          m_bufferedData;            // map holding the buffered data from previous handleRead events
 
 
-        Ipv4Address     m_local;                            // 本节点地址
+        Address     m_local;                                // 本节点地址
         std::vector<Ipv4Address>  m_peersAddresses;         // 邻节点列表
 
         int             t_max;                // 当前已经发布的最大票号
         char            command;              // 当前存储的命令
         int             t_store;              // 存储当前命令的票号               
-        int             ticket;               // 作为客户端时当前尝试的票号        （ 如果并发，需改为map）
+        int             ticket;               // 作为客户端时当前尝试的票号        （如果并发，需改为map）
 
 
 
         int             isCommit;                           // 是否成功提交
         char            proposal;                           // 要发送的命令
-        int             round;
-        int             vote;
-        int             N;
+        int             round;                              
+        int             vote_success;                       // 响应成功数
+        int             vote_failed;                        // 响应失败数
+        int             N;                                  // 总节点数
 
         // 继承 Application 类必须实现的虚函数
         virtual void StartApplication (void);    
@@ -64,6 +65,8 @@ class PaxosNode : public Application
         //void SendMessage(enum Message responseMessage, std::string msg, Ptr<Socket> outgoingSocket);
 
         void requireTicket(void);
+
+        void Send(uint8_t data[], Address from);
 };
 
 enum Message
