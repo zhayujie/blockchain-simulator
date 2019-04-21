@@ -6,7 +6,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("PaxosSimulator");
+NS_LOG_COMPONENT_DEFINE ("BlockchainSimulator");
 
 // 创建网络
 void startSimulator (int N)
@@ -14,14 +14,14 @@ void startSimulator (int N)
   NodeContainer nodes;
   nodes.Create (N);
 
-  PaxosHelper paxosHelper (N);
+  NetworkHelper networkHelper (N);
   // 默认pointToPint只能连接两个节点，需要手动连接
   NetDeviceContainer devices;
   PointToPointHelper pointToPoint;
 
   
   pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("8Mbps"));
-  pointToPoint.SetChannelAttribute ("Delay", StringValue ("15ms"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("5ms"));
   uint32_t nNodes = nodes.GetN ();
 
   InternetStackHelper stack;
@@ -41,18 +41,18 @@ void startSimulator (int N)
           interface.Add(address.Assign (device.Get(0)));
           interface.Add(address.Assign (device.Get(1)));
 
-          paxosHelper.m_nodesConnectionsIps[i].push_back(interface.GetAddress(1));
-          paxosHelper.m_nodesConnectionsIps[j].push_back(interface.GetAddress(0));
+          networkHelper.m_nodesConnectionsIps[i].push_back(interface.GetAddress(1));
+          networkHelper.m_nodesConnectionsIps[j].push_back(interface.GetAddress(0));
 
           // 创建新的网络: 如果不增加网络的话, 所有ip都在一个字网，而最后一块device会覆盖之前的设置，导致无法通过ip访问到之前的邻居节点
           // 应该的设置：每个device连接的两个节点在一个字网内，所以每分配一次ip，地址应该增加一个网段
           address.NewNetwork();
       }
   }
-  ApplicationContainer paxosApp = paxosHelper.Install (nodes);
+  ApplicationContainer nodeApp = networkHelper.Install (nodes);
 
-  paxosApp.Start (Seconds (0.0));
-  paxosApp.Stop (Seconds (10.0));
+  nodeApp.Start (Seconds (0.0));
+  nodeApp.Stop (Seconds (100.0));
 
   Simulator::Run ();
   Simulator::Destroy ();
@@ -64,10 +64,12 @@ main (int argc, char *argv[])
 {
   CommandLine cmd;
   cmd.Parse (argc, argv);
-  int N = 10;
+  int N = 30;
   
   Time::SetResolution (Time::NS);
-  LogComponentEnable ("PaxosNode", LOG_LEVEL_INFO);
+
+  // 此处需要改为具体的协议类
+  LogComponentEnable ("RaftNode", LOG_LEVEL_INFO);
 
   // 启动模拟器
   startSimulator(N);
