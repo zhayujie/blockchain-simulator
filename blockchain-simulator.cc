@@ -19,9 +19,9 @@ void startSimulator (int N)
   NetDeviceContainer devices;
   PointToPointHelper pointToPoint;
 
-  
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("8Mbps"));
-  pointToPoint.SetChannelAttribute ("Delay", StringValue ("5ms"));
+  // 节点总带宽20Mbps，分到每一个点对点通道上为2.5Mbps
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("2.5Mbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("3ms"));
   uint32_t nNodes = nodes.GetN ();
 
   InternetStackHelper stack;
@@ -52,7 +52,7 @@ void startSimulator (int N)
   ApplicationContainer nodeApp = networkHelper.Install (nodes);
 
   nodeApp.Start (Seconds (0.0));
-  nodeApp.Stop (Seconds (100.0));
+  nodeApp.Stop (Seconds (10.0));
 
   Simulator::Run ();
   Simulator::Destroy ();
@@ -64,7 +64,7 @@ main (int argc, char *argv[])
 {
   CommandLine cmd;
   cmd.Parse (argc, argv);
-  int N = 30;
+  int N = 8;
   
   Time::SetResolution (Time::NS);
 
