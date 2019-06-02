@@ -47,6 +47,12 @@ class RaftNode : public Application
     int             add_change_value;                   // 是否在心跳中加入提案
     EventId         m_nextElection;                     // 下一次成为candidate广播投票的事件
     EventId         m_nextHeartbeat;                    // 下一次发送心跳的事件
+    // int             tx_speed;                           // 交易生成的速率，单位为op/s
+    int             blockNum;                           // 区块个数
+    int             round;                              // 共识轮数
+    uint8_t *       tx;                                 // 交易
+    // int             tx_size;                            // 一个交易的大小
+
     // 继承 Application 类必须实现的虚函数
     virtual void StartApplication (void);    
     virtual void StopApplication (void); 
@@ -66,6 +72,8 @@ class RaftNode : public Application
 
     void Send(uint8_t data[], Address from);
 
+    void SendTX(uint8_t data[], int num);
+
     // 设置发送提案
     void setProposal(void);
 };
@@ -78,7 +86,6 @@ enum Message
     VOTE_RES,          // 3       对请求投票的响应
     HEARTBEAT,         // 4       心跳
     HEARTBEAT_RES,     // 5       心跳回复
-
 };
 
 enum HeartBeatType
