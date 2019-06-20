@@ -19,8 +19,8 @@ void startSimulator (int N)
   NetDeviceContainer devices;
   PointToPointHelper pointToPoint;
 
-  // 节点总带宽20Mbps，分到每一个点对点通道上为2.5Mbps
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("2.5Mbps"));
+  // 节点总带宽24Mbps，分到每一个点对点通道上为3Mbps
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("3Mbps"));
   pointToPoint.SetChannelAttribute ("Delay", StringValue ("3ms"));
   uint32_t nNodes = nodes.GetN ();
 
@@ -69,7 +69,7 @@ main (int argc, char *argv[])
   Time::SetResolution (Time::NS);
 
   // 此处需要改为具体的协议类
-  LogComponentEnable ("RaftNode", LOG_LEVEL_INFO);
+  LogComponentEnable ("PbftNode", LOG_LEVEL_INFO);
 
   // 启动模拟器
   startSimulator(N);

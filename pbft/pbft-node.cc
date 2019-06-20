@@ -20,8 +20,16 @@
 #include <ctime>
 #include <map>
 
-namespace ns3 {
+// 全局变量 是所有节点间共用的
+int tx_size;
+int tx_speed;                  // 交易生成的速率，单位为op/s
+int n;
+int v;
+int val;
+float timeout;                   // 发送区块的间隔时间
+int n_round;
 
+namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("PbftNode");
 
 NS_OBJECT_ENSURE_REGISTERED (PbftNode);
@@ -54,17 +62,58 @@ static int charToInt(char a) {
     return a - '0';
 }
 
-// 信息接收延迟 0 - 3 ms
+// 信息接收延迟 3 - 6 ms
 float 
 getRandomDelay() {
-  return (rand() % 3) * 1.0 / 1000;
+  return ((rand() % 3) * 1.0 + 3) / 1000;
 }
 
+void
+printVector(std::vector<int> vec) {
+    for (int i = 0; i < vec.size(); i++) {
+        NS_LOG_INFO(vec[i] + " ");
+    }
+}
+
+// 生成交易 每个交易 size KB
+static uint8_t * generateTX (int num)
+{
+  int size = num * tx_size;
+  uint8_t data[size];
+  int i;
+  for (i = 0; i < size; i++) {
+    data[i] = '1';
+  }
+  data[i] = '\0';
+  // NS_LOG_INFO("初始化成功: " << data);
+  data[0] = intToChar(PRE_PREPARE);
+  data[1] = intToChar(v);
+  data[2] = intToChar(n);
+  data[3] = intToChar(n);
+
+  return data;
+}
 
 void 
 PbftNode::StartApplication ()            
 {
-    // 初始化变量
+    // 初始化全局变量
+    v = 1;              // 视图数
+    n = 0;              // 当前视图的交易序号
+    leader = 0;
+    tx_size = 1000;      // 1 KB
+    tx_speed = 1000;    // 1000 tx/s
+    timeout = 0.05;      // 50 ms
+
+    block_num = 0;
+    // 共识轮数
+    n_round = 0;                      
+
+    // 交易要更新的值
+    val = intToChar(m_id);
+
+    // 需要修改的value值
+    // int value = 3; 
 
     // 初始化socket
     if (!m_socket)
@@ -90,11 +139,28 @@ PbftNode::StartApplication ()
         m_peersSockets[*iter] = socketClient;
         iter++;
     }
+    // NS_LOG_INFO("Node " << GetNode ()->GetId () << "网络建立");
+    // 如果是leader节点， 广播预准备消息
+    // if (m_id == leader) {
+        // is_leader = 1;
+        // uint8_t data[4];
+        // data[0] = intToChar(PRE_PREPARE);
+        // data[1] = intToChar(v);
+        // data[2] = intToChar(n);
+        // data[3] = intToChar(value);
+        // // leader 广播预准备消息
+
+        // 发送区块
+        // SendBlock(data, num);
+    Simulator::Schedule(Seconds(timeout), &PbftNode::SendBlock, this);
+        // n++;
+    // }
 }
 
 void 
 PbftNode::StopApplication ()
 {
+    // printVector(values);
 }
 
 void 
@@ -120,17 +186,102 @@ PbftNode::HandleRead (Ptr<Socket> socket)
             //     InetSocketAddress::ConvertFrom (from).GetPort ());
 
             // // 打印接收到的结果
-            // NS_LOG_INFO("Node " << GetNode ()->GetId () << " Total Received Data: " << msg);
+            // NS_LOG_INFO("Node " << GetNode ()->GetId () << " 接收到消息: " << msg);
             uint8_t data[4];
             switch (charToInt(msg[0]))
             {
-                switch (0)
-                {
-                  // 消息处理逻辑
+                case PRE_PREPARE:           
+                {   
+                    // 收到预准备消息
+                    data[0] = intToChar(PREPARE);
+                    data[1] = msg[1];           // v
+                    data[2] = msg[2];           // n
+                    data[3] = msg[3];           // value
+                    // 序号值
+                    int num = charToInt(msg[2]);
+
+                    // 存储交易中的value值
+                    tx[num].val = charToInt(msg[3]);
+                    // if (num > n) {
+                    //     n = num;
+                    // }
+                    // 广播准备消息
+                    Send(data);
+                    break;
                 }
+                case PREPARE:           
+                {   
+                    // 收到准备消息
+                    data[0] = intToChar(PREPARE_RES);
+                    data[1] = msg[1];      // v
+                    data[2] = msg[2];      // n
+                    data[3] = intToChar(SUCCESS);     
+                    // 回复准备消息响应
+                    Send(data, from);
+                    break;
+                }
+                case PREPARE_RES:           
+                {   
+                    // 收到准备消息响应
+                    int index = charToInt(msg[2]);
+                    if (charToInt(msg[3]) == 0) {
+                        tx[index].prepare_vote++;
+                    }
+                    // if 超过半数SUCCESS, 则广播COMMIT
+                    if (tx[index].prepare_vote >= N / 2) {
+                        data[0] = intToChar(COMMIT);
+                        data[1] = msg[1];       // v
+                        data[2] = msg[2];       // n
+                        Send(data);
+                        // NS_LOG_INFO("node"<< m_id << "获得的准备投票: " << tx[index].prepare_vote);
+                        tx[index].prepare_vote = 0;
+                    }
+                    break;
+                }
+                case COMMIT:           
+                {   
+                    // 收到提交消息
+                    int index = charToInt(msg[2]);
+                    // NS_LOG_INFO("node"<< m_id << "收到commit " << tx[index].val);
+                    tx[index].commit_vote++;
+                    // 超过半数则 回复提交消息响应
+                    if (tx[index].commit_vote > N / 2) {
+                        data[0] = intToChar(COMMIT_RES);
+                        data[1] = intToChar(v);
+                        data[2] = intToChar(n);
+                        data[3] = SUCCESS;       // n
+                        // Send(data);
+                        tx[index].commit_vote = 0;
+
+                        // 记录交易到队列中
+                        values.push_back(tx[index].val);
+                        // NS_LOG_INFO("node"<< m_id << "加入交易 " << tx[index].val);
+                        NS_LOG_INFO("node "<< m_id << " 在视图 " << v << " 中完成了第 " << block_num << " 次提交, 时间为 " << Simulator::Now ().GetSeconds () << "s, value is " << values[block_num] << "\n");
+                        block_num++;
+                        // n = n + 1;
+                    }
+                    // Send(data, from);
+                    break;
+                }
+                // case COMMIT_RES:
+                // {
+                //     // 如果超过半数则表示提交成功，reply客户端成功
+                // }
+
+                case VIEW_CHANGE:
+                {
+                    int vt = charToInt(msg[1]);
+                    int lt = charToInt(msg[2]);
+                    v = vt;
+                    leader = lt;
+                    if (m_id == leader) {
+                        NS_LOG_INFO("view-change完成, 当前主节点为 " << leader << "视图为 " << v);
+                    }
+                }
+
                 default:
                 {
-                    NS_LOG_INFO("wrong msg");
+                    NS_LOG_INFO("Wrong msg");
                     break;
                 }
             }
@@ -139,6 +290,17 @@ PbftNode::HandleRead (Ptr<Socket> socket)
     }
 }
 
+void
+PbftNode::viewChange (void)
+{
+    uint8_t data[4];
+    leader = (leader + 1) % N;
+    v += 1;
+    data[0] = intToChar(VIEW_CHANGE);
+    data[1] = intToChar(v);
+    data[2] = intToChar(leader);
+    Send(data);
+}
 
 std::string 
 PbftNode::getPacketContent(Ptr<Packet> packet, Address from) 
@@ -166,8 +328,8 @@ SendPacket(Ptr<Socket> socketClient,Ptr<Packet> p) {
 void 
 PbftNode::Send(uint8_t data[], Address from)
 {
-     Ptr<Packet> p;
-    p = Create<Packet> (data, 3);
+    Ptr<Packet> p;
+    p = Create<Packet> (data, 4);
     //NS_LOG_INFO("packet: " << p);
     
     TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -189,7 +351,7 @@ PbftNode::Send (uint8_t data[])
 {   
   // NS_LOG_INFO("广播消息");
   Ptr<Packet> p;
-  p = Create<Packet> (data, 3);
+  p = Create<Packet> (data, 4);
   
   TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
 
@@ -207,25 +369,74 @@ PbftNode::Send (uint8_t data[])
 
 // 向所有邻居节点广播区块
 void 
-PbftNode::SendBlock (uint8_t data[], int num)
+PbftNode::SendBlock (void)
 {   
-  NS_LOG_INFO("广播区块: time: " << Simulator::Now ().GetSeconds () << " s");
+  // NS_LOG_INFO("广播区块: time: " << Simulator::Now ().GetSeconds () << " s");
   Ptr<Packet> p;
   // TODO: 广播的内容包 p
-  // p = Create<Packet> (data, size);
+  int num = tx_speed / (1000 / (timeout * 1000)); 
+  uint8_t * data = generateTX(num);
+  int size = tx_size * num;
+  p = Create<Packet> (data, size);
 
   TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
 
-
   std::vector<Ipv4Address>::iterator iter = m_peersAddresses.begin();
 
-  while(iter != m_peersAddresses.end()) {
-    TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
-    
-    Ptr<Socket> socketClient = m_peersSockets[*iter];
-    double delay = getRandomDelay();
-    Simulator::Schedule(Seconds(delay), SendPacket, socketClient, p);
-    iter++;
+  if (m_id == leader) {
+    NS_LOG_INFO("主节点 node"<< m_id << "开始广播区块, 时间为" <<Simulator::Now ().GetSeconds () << "s\n");
+
+    while(iter != m_peersAddresses.end()) {
+        TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+        
+        Ptr<Socket> socketClient = m_peersSockets[*iter];
+        double delay = getRandomDelay();
+        Simulator::Schedule(Seconds(delay), SendPacket, socketClient, p);
+        iter++;
+    }
+    n_round++;
+    n++;
+
+    // view_change， 概率为1/10
+    if (rand() % 100 == 5) {
+        viewChange();
+    }
+  }
+
+  blockEvent = Simulator::Schedule (Seconds(timeout), &PbftNode::SendBlock, this);
+  if (n_round == 40) {
+    NS_LOG_INFO(" 已经发送了第 "<< n_round << "个区块 at time: " << Simulator::Now ().GetSeconds () << "s");
+    Simulator::Cancel(blockEvent);
   }
 }
+
+// // 向所有邻居节点广播交易
+// void 
+// RaftNode::SendTX (uint8_t data[], int num)
+// {    
+//   NS_LOG_INFO("广播区块: " << round << ", time: " << Simulator::Now ().GetSeconds () << " s");
+//   Ptr<Packet> p;
+//   int size = tx_size * num;
+//   p = Create<Packet> (data, size);
+  
+//   TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+
+
+//   std::vector<Ipv4Address>::iterator iter = m_peersAddresses.begin();
+
+//   while(iter != m_peersAddresses.end()) {
+//     TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+    
+//     Ptr<Socket> socketClient = m_peersSockets[*iter];
+//     double delay = getRandomDelay();
+//     Simulator::Schedule(Seconds(delay), SendPacket, socketClient, p);
+//     iter++;
+//   }
+//   round++;
+//   if (round == 50) {
+//     NS_LOG_INFO("node" << m_id << " 已经发送了 "<< round << "个区块 at time: " << Simulator::Now ().GetSeconds () << "s");
+//     // Simulator::Cancel (m_nextHeartbeat);
+//     add_change_value = 0;
+//   }
+// }
 } 
