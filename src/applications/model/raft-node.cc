@@ -20,8 +20,8 @@
 #include <ctime>
 #include <map>
 
-int tx_size = 200;
-int tx_speed = 2000;                  // 交易生成的速率，单位为op/s
+int tx_size = 200;                    // the size of tx, in KB
+int tx_speed = 2000;                  // the rate of transaction generation, in op/s
 
 
 namespace ns3 {
@@ -82,7 +82,7 @@ RaftNode::StartApplication ()
     vote_failed = 0;                      // 获得的失败数
     has_voted = 0;                        // 未开始投票
     add_change_value = 0;                 // 是否在心跳中加入提案
-    is_leader = 0;                    // 是否是leader节点
+    is_leader = 0;                        // 是否是leader节点
     round = 0;
     blockNum = 0;
 
@@ -102,6 +102,7 @@ RaftNode::StartApplication ()
 
     std::vector<Ipv4Address>::iterator iter = m_peersAddresses.begin();
     // 与所有节点建立连接
+    NS_LOG_INFO("node"<< m_id << " start");
     while(iter != m_peersAddresses.end()) {
         // NS_LOG_INFO("node"<< m_id << *iter << "\n");
         TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -209,7 +210,7 @@ RaftNode::HandleRead (Ptr<Socket> socket)
                       if (vote_success + 1 > N / 2) {
                           vote_success = 0;
                           vote_failed = 0;
-                          NS_LOG_INFO("Node " << m_id << " become leader! at time " << Simulator::Now ().GetSeconds () << "s");
+                          NS_LOG_INFO("Node " << m_id << " become leader in " << N << " nodes at time " << Simulator::Now ().GetSeconds () << "s");
                           // 关闭自己的超时时间
                           Simulator::Cancel (m_nextElection);
                           // 在1s后开始在心跳中加入提案
@@ -243,10 +244,10 @@ RaftNode::HandleRead (Ptr<Socket> socket)
                           if (vote_success + 1 > N / 2) {
                               vote_success = 0;
                               vote_failed = 0;
-                              NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << " leader处理完一个区块 " << blockNum);
+                              NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << " leader finished processing a block, number: " << blockNum);
                               blockNum += 1;
                               if (blockNum >= 50) {
-                                NS_LOG_INFO("node" << m_id << " 已经处理完 "<< blockNum << "个区块 at time: " << Simulator::Now ().GetSeconds () << "s");
+                                NS_LOG_INFO("node" << m_id << " already processed "<< blockNum << " blocks at time: " << Simulator::Now ().GetSeconds () << "s");
                                 Simulator::Cancel (m_nextHeartbeat);
                               }
                               // 停止心跳发送
@@ -339,7 +340,7 @@ static uint8_t * generateTX (int num)
 void 
 RaftNode::SendTX (uint8_t data[], int num)
 { 
-  NS_LOG_INFO("广播区块: " << round << ", time: " << Simulator::Now ().GetSeconds () << " s");
+  NS_LOG_INFO("broadcast block round: " << round << ", time: " << Simulator::Now ().GetSeconds () << " s");
   Ptr<Packet> p;
   int size = tx_size * num;
   p = Create<Packet> (data, size);
@@ -359,7 +360,7 @@ RaftNode::SendTX (uint8_t data[], int num)
   }
   round++;
   if (round == 50) {
-    NS_LOG_INFO("node" << m_id << " 已经发送了 "<< round << "个区块 at time: " << Simulator::Now ().GetSeconds () << "s");
+    NS_LOG_INFO("node" << m_id << " has sent "<< round << " blocks at time: " << Simulator::Now ().GetSeconds () << "s");
     // Simulator::Cancel (m_nextHeartbeat);
     add_change_value = 0;
   }
@@ -395,8 +396,8 @@ RaftNode::sendVote(void) {
   uint8_t data[3];
   data[0] = intToChar(VOTE_REQ);
   data[1] = intToChar(m_id);
+  // NS_LOG_INFO("node" << m_id << " start election: "<< data << " at time: " << Simulator::Now ().GetSeconds () << "s" );
   Send(data);
-  NS_LOG_INFO("node" << m_id << " start election: "<< data << " at time: " << Simulator::Now ().GetSeconds () << "s" );
   m_nextElection = Simulator::Schedule (Seconds(getElectionTimeout()), &RaftNode::sendVote, this);
 }
 

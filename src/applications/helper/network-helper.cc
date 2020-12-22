@@ -7,14 +7,15 @@
 #include "ns3/internet-module.h"
 #include "ns3/applications-module.h"
 
-// 此处需要改为具体协议的头文件
-#include "../model/pbft-node.h"
+// 2.need changed to the the specific header file
+#include "../model/raft-node.h"
+// #include "../model/paxos-node.h"
+// #include "../model/pbft-node.h"
 
 namespace ns3 {
-    
-    // 工厂模式生成app实例， 在NetworkNode中必须要 GetTypeId方法，否则出错
     NetworkHelper::NetworkHelper(uint32_t totalNoNodes) {
-        m_factory.SetTypeId ("ns3::PbftNode");
+        // 3.need changed to a specific typeId
+        m_factory.SetTypeId ("ns3::RaftNode");
         m_nodeNo = totalNoNodes;
     }
     
@@ -24,8 +25,8 @@ namespace ns3 {
         ApplicationContainer apps;
         for (NodeContainer::Iterator i = c.Begin (); i != c.End (); i++)
         {
-            // 此处需要改为具体协议的类
-            Ptr<PbftNode> app = m_factory.Create<PbftNode> ();
+            // 4.need changed to a specific protocol class
+            Ptr<RaftNode> app = m_factory.Create<RaftNode> ();
             uint32_t nodeId = (*i)->GetId(); 
             app->m_id = nodeId;
             app->N = m_nodeNo;

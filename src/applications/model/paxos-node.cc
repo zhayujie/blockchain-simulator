@@ -75,7 +75,7 @@ PaxosNode::StartApplication ()              // Called at time specified by Start
     //std::cout << "start server ";
     // NS_LOG_INFO("log info");
     // m_socket->SetRecvCallback (MakeCallback (&PaxosNode::HandleRead, this));
-    //NS_LOG_INFO("Node " << m_id);//" start, IP: " << m_local); //<< " neighbor: " << m_peersAddresses[0]);
+    NS_LOG_INFO("Node " << m_id << " start, neighbor: " << m_peersAddresses[0]);
     
     
    for (int i = 0; i < N; i++) {

@@ -64,14 +64,16 @@ main (int argc, char *argv[])
 {
   CommandLine cmd;
   cmd.Parse (argc, argv);
-  int N = 8;
+  
+  // numbers of nodes in network
+  int N = 16;
   
   Time::SetResolution (Time::NS);
 
-  // 此处需要改为具体的协议类
-  LogComponentEnable ("PbftNode", LOG_LEVEL_INFO);
+  // 1.need changed to a specific protocol class
+  LogComponentEnable ("RaftNode", LOG_LEVEL_INFO);
 
-  // 启动模拟器
+  // start the simulator
   startSimulator(N);
 
   return 0;

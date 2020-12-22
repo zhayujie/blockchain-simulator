@@ -256,7 +256,7 @@ PbftNode::HandleRead (Ptr<Socket> socket)
                         // 记录交易到队列中
                         values.push_back(tx[index].val);
                         // NS_LOG_INFO("node"<< m_id << "加入交易 " << tx[index].val);
-                        NS_LOG_INFO("node "<< m_id << " 在视图 " << v << " 中完成了第 " << block_num << " 次提交, 时间为 " << Simulator::Now ().GetSeconds () << "s, value is " << values[block_num] << "\n");
+                        NS_LOG_INFO("node "<< m_id << " in view " << v << " finish " << block_num << "th times submit, at time " << Simulator::Now ().GetSeconds () << "s, value is " << values[block_num] << "\n");
                         block_num++;
                         // n = n + 1;
                     }
@@ -384,7 +384,7 @@ PbftNode::SendBlock (void)
   std::vector<Ipv4Address>::iterator iter = m_peersAddresses.begin();
 
   if (m_id == leader) {
-    NS_LOG_INFO("主节点 node"<< m_id << "开始广播区块, 时间为" <<Simulator::Now ().GetSeconds () << "s\n");
+    NS_LOG_INFO("Leader node"<< m_id << "start broadcast, at time " <<Simulator::Now ().GetSeconds () << "s");
 
     while(iter != m_peersAddresses.end()) {
         TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
