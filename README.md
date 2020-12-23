@@ -1,15 +1,15 @@
 # blockchain-simulator
 
-Some simulations of blockchain consensus based on [NS3](https://www.nsnam.org/). It aims to simulate the relationship between **blockchain performance** and consensus protocol, network scale, block size, bandwidth, delay and other factors.
+Here are some simulations of blockchain consensus protocol based on [NS3](https://www.nsnam.org/), which aims to simulate the relationship between **blockchain performance** and consensus protocol, network scale, block size, bandwidth, delay and other factors.
 
 
 ## Quick start
 
 #### 1.Download ns3
 
-The [3.29](https://www.nsnam.org/releases/ns-3-29/download/) or [3.25](https://www.nsnam.org/releases/ns-3-25/download/) version of NS3 is recommended.
+The version [3.29](https://www.nsnam.org/releases/ns-3-29/download/) or [3.25](https://www.nsnam.org/releases/ns-3-25/download/) of NS3 is recommended.
 
-#### 2.Plcae code
+#### 2.Place code
 
 Next, you need to place all the files from **blockchain-simulator** to the respective folders under `ns-allinone-3.xx/ns-3.xx`.
 
@@ -43,15 +43,13 @@ CXXFLAGS="-std=c++11 -Wno-unused-parameter" ./waf configure
 
 You can set the network scale and other factors in `blockchain-simulator.cc`.
 
-More detailed usage use of NS3 can be referred to
+More detailed usage use of NS3 can be found in
 <https://github.com/arthurgervais/Bitcoin-Simulator>
 
 
 ## Switch consensus
 
-There are three consensus protocols to choose from, including raft, paxos and pbft, The default is raft.
-
-If you need to switch the consensus protocol, such as from raft to pbft, You need to modify some files.
+There are three consensus protocols to choose from, including raft, paxos and pbft, The default is raft. If you need to switch the consensus protocol, such as from raft to pbft, You need to modify some files.
 
 #### 1.Update the blockchain-simulator.cc
 
