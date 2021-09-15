@@ -324,7 +324,7 @@ RaftNode::Send(uint8_t data[], Address from)
 static uint8_t * generateTX (int num)
 {
   int size = num * tx_size;
-  uint8_t data[size];
+  uint8_t *data = (uint8_t *)std::malloc (size);
   int i;
   for (i = 0; i < size; i++) {
     data[i] = '1';
