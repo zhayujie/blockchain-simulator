@@ -398,7 +398,7 @@ PbftNode::SendBlock (void)
     n++;
 
     // view_change， 概率为1/10
-    if (rand() % 100 == 5) {
+    if (rand() % 10 == 5) {
         viewChange();
     }
   }
