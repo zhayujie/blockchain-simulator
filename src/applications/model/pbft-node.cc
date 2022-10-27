@@ -172,7 +172,7 @@ PbftNode::HandleRead (Ptr<Socket> socket)
 
     while ((packet = socket->RecvFrom (from)))
     {
-        socket->SendTo(packet, 0, from);
+        // socket->SendTo(packet, 0, from);
         if (packet->GetSize () == 0)
         {   //EOF
             break;
@@ -228,7 +228,7 @@ PbftNode::HandleRead (Ptr<Socket> socket)
                         tx[index].prepare_vote++;
                     }
                     // if 超过半数SUCCESS, 则广播COMMIT
-                    if (tx[index].prepare_vote >= N / 2) {
+                    if (tx[index].prepare_vote >= 2 * N / 3) {
                         data[0] = intToChar(COMMIT);
                         data[1] = msg[1];       // v
                         data[2] = msg[2];       // n
@@ -245,7 +245,7 @@ PbftNode::HandleRead (Ptr<Socket> socket)
                     // NS_LOG_INFO("node"<< m_id << "收到commit " << tx[index].val);
                     tx[index].commit_vote++;
                     // 超过半数则 回复提交消息响应
-                    if (tx[index].commit_vote > N / 2) {
+                    if (tx[index].commit_vote > 2 * N / 3) {
                         data[0] = intToChar(COMMIT_RES);
                         data[1] = intToChar(v);
                         data[2] = intToChar(n);
